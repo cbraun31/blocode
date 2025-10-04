@@ -1,14 +1,14 @@
 {
-  "name": "babylon-grid",
-  "version": "1.0.0",
-  "description": "",
+  "name": "blocode",
+  "version": "0.0.1",
+  "description": "A voxel sandbox game that implements a robust agent system as a core gameplay mechanic.",
   "main": "index.js",
   "scripts": {
     "start": "webpack serve --mode development",
     "build": "webpack --mode production"
   },
   "keywords": [],
-  "author": "",
+  "author": "Cameron Braun",
   "license": "ISC",
   "devDependencies": {
     "@babylonjs/core": "^7.10.0",
