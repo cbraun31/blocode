@@ -1,15 +1,9 @@
 import * as BABYLON from "@babylonjs/core";
 const divFps = document.getElementById("fps");
-// Get the canvas element from the HTML document
 const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
-
-// Initialize the Babylon.js 3D engine
 const engine = new BABYLON.Engine(canvas, true);
 
-// This function creates the scene, camera, lights, and our grid of cubes
 const createScene = (): BABYLON.Scene => {
-    
-    // Create a new scene
     const scene = new BABYLON.Scene(engine);
     scene.autoClearDepthAndStencil = false; // Depth and stencil, obviously
     scene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.2, 1.0);
@@ -38,27 +32,21 @@ const createScene = (): BABYLON.Scene => {
     );
     light.intensity = 0.7;
 
-    // 1. Create a new material for the cubes
+    // Create a new material for the cubes
     const cubeMat = new BABYLON.StandardMaterial("cubeMat", scene);
     cubeMat.freeze();
-
-    // 2. Create a texture from our image file
     const cubeTexture = new BABYLON.Texture("assets/grid.png", scene);
-
-    // 3. Apply the texture to the material's diffuse channel (base color)
     cubeMat.diffuseTexture = cubeTexture;
     const gridSize = 40;
-
     const masterCube = BABYLON.MeshBuilder.CreateBox(
         "masterCube",
         { size: 1 },
         scene
     );
-
     masterCube.convertToUnIndexedMesh();
     masterCube.isVisible = false;
     masterCube.checkCollisions = true;
-    masterCube.material = cubeMat; // 4. Assign the new material to our master cube
+    masterCube.material = cubeMat; 
 
     for (let x = 0; x < gridSize; x++) {
         for (let z = 0; z < gridSize; z++) {
