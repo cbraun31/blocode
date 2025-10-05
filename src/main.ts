@@ -15,7 +15,7 @@ const createScene = (): BABYLON.Scene => {
     // --- Player and Camera Setup ---
     const camera = new BABYLON.UniversalCamera(
         "playerCamera",
-        new BABYLON.Vector3(0, 1.8, -10),
+        new BABYLON.Vector3(0, 3, 0),
         scene
     );
     camera.attachControl(canvas, true);
@@ -31,18 +31,11 @@ const createScene = (): BABYLON.Scene => {
     // --- Lighting ---
     const light = new BABYLON.HemisphericLight(
         "light",
-        new BABYLON.Vector3(0, 1, 0),
+        new BABYLON.Vector3(5, 1, 5),
         scene
     );
     light.intensity = 0.7;
 
-    // --- Scenery ---
-    const ground = BABYLON.MeshBuilder.CreateGround(
-        "ground",
-        { width: 20, height: 20 },
-        scene
-    );
-    ground.checkCollisions = true;
     // 1. Create a new material for the cubes
     const cubeMat = new BABYLON.StandardMaterial("cubeMat", scene);
 
@@ -69,17 +62,56 @@ const createScene = (): BABYLON.Scene => {
             const xPos = (x - gridSize / 2) * spacing + 1;
             const zPos = (z - gridSize / 2) * spacing + 1;
             cubeInstance.position = new BABYLON.Vector3(xPos, 0.5, zPos);
+            cubeInstance.showBoundingBox = true;
+            cubeInstance.checkCollisions = true;
         }
     }
 
+
     // --- Pointer Lock for Mouse Look ---
     canvas.addEventListener("click", () => {
-        engine.enterPointerlock();
-    });
+        if (engine.isPointerLock) {
+            // Origin: The camera's absolute position in the world.
+            const rayOrigin = camera.position; 
+            // Direction: The camera's forward vector (where it's pointing).
+            // The getDirection method uses a direction vector relative to the camera's axes.
+            // BABYLON.Axis.Z is the camera's forward axis.
+            const rayDirection = camera.getDirection(BABYLON.Axis.Z);
+            // Length: How far the ray should travel (e.g., 100 units)
+            const rayLength = 100;
+            // Create the Ray object
+            const ray = new BABYLON.Ray(rayOrigin, rayDirection, rayLength);
+            // Cast the Ray
+            // The second parameter (predicate) is null to check all pickable meshes.
+            const pickResult = scene.pickWithRay(ray);
+            // Handle the Intersection
+            if (! (pickResult == null) && pickResult.hit) {
+                const intersectedMesh = pickResult.pickedMesh;
+                if (! (intersectedMesh == null)){
+                     console.log(`Hit mesh directly in front of camera: ${intersectedMesh.name}`);
+                
+                    // Example action: change the hit mesh color to a random color
+                    // if (intersectedMesh.material instanceof BABYLON.StandardMaterial) {
+                    //     intersectedMesh.material.diffuseColor = BABYLON.Color3.Random();
+                    // }
+                    intersectedMesh.dispose();
 
+                    // Optional: Show the ray for debugging
+                    const rayHelper = new BABYLON.RayHelper(ray);
+                    rayHelper.show(scene, BABYLON.Color3.Teal());
+                    setTimeout(() => rayHelper.dispose(), 3500); // Remove after a short delay
+                }
+               
+            } else {
+                console.log("No mesh was hit along the camera's forward vector.");
+            }
+        } else {
+            engine.enterPointerlock();
+        }
+        
+    });
     return scene;
 };
-
 const scene = createScene();
 
 // Run the render loop
