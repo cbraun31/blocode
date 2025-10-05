@@ -1,5 +1,5 @@
 import * as BABYLON from "@babylonjs/core";
-
+const divFps = document.getElementById("fps");
 // Get the canvas element from the HTML document
 const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
 
@@ -8,8 +8,10 @@ const engine = new BABYLON.Engine(canvas, true);
 
 // This function creates the scene, camera, lights, and our grid of cubes
 const createScene = (): BABYLON.Scene => {
+    
     // Create a new scene
     const scene = new BABYLON.Scene(engine);
+    scene.autoClearDepthAndStencil = false; // Depth and stencil, obviously
     scene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.2, 1.0);
 
     // --- Player and Camera Setup ---
@@ -38,20 +40,22 @@ const createScene = (): BABYLON.Scene => {
 
     // 1. Create a new material for the cubes
     const cubeMat = new BABYLON.StandardMaterial("cubeMat", scene);
+    cubeMat.freeze();
 
     // 2. Create a texture from our image file
     const cubeTexture = new BABYLON.Texture("assets/grid.png", scene);
 
     // 3. Apply the texture to the material's diffuse channel (base color)
     cubeMat.diffuseTexture = cubeTexture;
-    const gridSize = 10;
-    const spacing = 1.01;
+    const gridSize = 40;
 
     const masterCube = BABYLON.MeshBuilder.CreateBox(
         "masterCube",
         { size: 1 },
         scene
     );
+
+    masterCube.convertToUnIndexedMesh();
     masterCube.isVisible = false;
     masterCube.checkCollisions = true;
     masterCube.material = cubeMat; // 4. Assign the new material to our master cube
@@ -59,46 +63,34 @@ const createScene = (): BABYLON.Scene => {
     for (let x = 0; x < gridSize; x++) {
         for (let z = 0; z < gridSize; z++) {
             const cubeInstance = masterCube.createInstance(`cube_${x}_${z}`);
-            const xPos = (x - gridSize / 2) * spacing + 1;
-            const zPos = (z - gridSize / 2) * spacing + 1;
+            const xPos = (x - gridSize / 2) + 1;
+            const zPos = (z - gridSize / 2) + 1;
             cubeInstance.position = new BABYLON.Vector3(xPos, 0.5, zPos);
             cubeInstance.showBoundingBox = true;
             cubeInstance.checkCollisions = true;
         }
     }
 
-
     // --- Pointer Lock for Mouse Look ---
     canvas.addEventListener("click", () => {
         if (engine.isPointerLock) {
-            // Origin: The camera's absolute position in the world.
             const rayOrigin = camera.position; 
-            // Direction: The camera's forward vector (where it's pointing).
-            // The getDirection method uses a direction vector relative to the camera's axes.
-            // BABYLON.Axis.Z is the camera's forward axis.
+            // z axis is always direction camera is facing
             const rayDirection = camera.getDirection(BABYLON.Axis.Z);
-            // Length: How far the ray should travel (e.g., 100 units)
             const rayLength = 100;
-            // Create the Ray object
             const ray = new BABYLON.Ray(rayOrigin, rayDirection, rayLength);
-            // Cast the Ray
-            // The second parameter (predicate) is null to check all pickable meshes.
             const pickResult = scene.pickWithRay(ray);
-            // Handle the Intersection
+            // check null AND 'undefined' at once here with == instead of ===
             if (! (pickResult == null) && pickResult.hit) {
                 const intersectedMesh = pickResult.pickedMesh;
                 if (! (intersectedMesh == null)){
-                     console.log(`Hit mesh directly in front of camera: ${intersectedMesh.name}`);
-                
-                    // Example action: change the hit mesh color to a random color
-                    // if (intersectedMesh.material instanceof BABYLON.StandardMaterial) {
-                    //     intersectedMesh.material.diffuseColor = BABYLON.Color3.Random();
-                    // }
+                    console.log(`Hit mesh directly in front of camera: ${intersectedMesh.name}`);
                     intersectedMesh.dispose();
-
                     // Optional: Show the ray for debugging
-                    const rayHelper = new BABYLON.RayHelper(ray);
-                    rayHelper.show(scene, BABYLON.Color3.Teal());
+                    var helpRay = ray.clone();
+                    helpRay.origin.addInPlace(new BABYLON.Vector3(0, 0, 0));
+                    const rayHelper = new BABYLON.RayHelper(helpRay);
+                    rayHelper.show(scene, BABYLON.Color3.Red());
                     setTimeout(() => rayHelper.dispose(), 3500); // Remove after a short delay
                 }
                
@@ -117,9 +109,13 @@ const scene = createScene();
 // Run the render loop
 engine.runRenderLoop(() => {
     scene.render();
+    if (! (divFps == null)) {
+        divFps.innerHTML = engine.getFps().toFixed() + " fps";
+    }
 });
 
 // Watch for browser/canvas resize events
 window.addEventListener("resize", () => {
     engine.resize();
 });
+
